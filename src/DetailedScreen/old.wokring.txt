@@ -1,0 +1,145 @@
+import axios from 'axios';
+import React,{useState,useEffect,useRef} from 'react'
+import { Image, Text, SafeAreaView, StyleSheet, FlatList, View, VirtualizedList, TouchableOpacity } from 'react-native'; 
+let APIURL = 'https://api.makemyhouse.com/';
+export const DetailedScreen = ({navigation})=> {
+  // loading 
+  const [mainLoading,setMainLoading] = useState(true) 
+  const [initialLoading,setInitialLoading] = useState(false);
+  const [continueLoading,setContinuesLoading] = useState(false);  
+ // actual data states  
+ let arrIds = new Array();
+ const [projectId,setprojectd] = useState(['13762'])  // list of all products  
+ const projectIdRef = useRef(null);
+
+ const [productDetails,setProductDetails] = useState(['']); // store all the products 
+ const productDetailsRef = useRef(null);
+
+ const [initialLoader,setInitialLoader] = useState(false); // initial loader of app
+
+ useEffect(()=>{
+    setInitialLoader(true);
+    // setprojectd(['13762']);  
+     arrIds.push('13762');
+},[]); 
+ 
+let aa = new Array();
+const Trendingapicall = async () => {  
+    let url = `${APIURL}public/projects/project_details/${projectId[projectId.length - 1] != undefined ? projectId[projectId.length - 1] : '13762' }`; 
+     try { 
+       // console.log('projectId[projectId.length - 1: ',projectId[projectId.length - 1])
+        const response = await axios.get(url) 
+        if(response.data.length>=1){ 
+            setProductDetails([response.data]) 
+        } 
+     } catch (error) { 
+         console.log(error);
+     }finally{  
+        GetNextProjectsIDs(); 
+     }
+};  
+
+ const GetNextProjectsIDs = async  ()=>{
+    let url = `${APIURL}public/projects?random=1&noOfProjects=2&exceptProjectID=${projectId[projectId.length - 1] != undefined ? projectId[projectId.length - 1] : '13762' }`; 
+  // let url = `${APIURL}public/projects?random=1&noOfProjects=1&exceptProjectID=13762`; 
+    try{ 
+        const response = await axios.get(url);   
+        if( response.data != undefined){ 
+            response.data.map((item,index)=>{ 
+               arrIds.push(item.projectID);
+                setprojectd((prevdata)=>[...prevdata,item.projectID])  
+            });
+        } 
+    }catch(error){
+        console.log("get Next Project Ids",error);
+    } 
+    finally{
+        AddNewProjectsDetails();
+    }  
+}
+ 
+const AddNewProjectsDetails = ()=>{
+    try{ 
+        arrIds.map( async (item,index)=>{
+            if(item != '13762'){ 
+                let url = `${APIURL}public/projects/project_details/${item}`;
+                let response =await axios.get(url);  
+                setProductDetails((prevdata)=>[...prevdata,response.data]); 
+            } 
+        });
+    }
+    catch(error){
+        console.log(error);
+    }finally{   
+    }
+}
+
+ useEffect(()=>{ 
+    Trendingapicall();
+ },[initialLoader]);
+ 
+
+
+
+  // VirtualizedList
+  const getItemCount = (data,index) => data.length;
+  const getItem  = (data,index)=>{ 
+      return data[index];
+  }
+ 
+
+  const ImageContainer = ({data} )=>{ 
+    
+    useEffect(()=>{
+       console.log(data)
+    },[]);
+
+    return(
+        //  <FlatList
+        //     horizontal={true}
+        //     keyExtractor={ item =>  item.img}
+        //     style={{
+        //         width: "100%", alignSelf: 'center',
+        //     }}
+        //     showsHorizontalScrollIndicator={false}
+        //     data={data} 
+        //     renderItem={(item,index)=>{
+        //         <View style={{width:'100%',height:200,backgroundColor:'red'}}>
+
+        //         </View>
+        //     }}
+            
+        //  />
+        <View style={{width:'100%',height:200,backgroundColor:'red'}}>
+
+        </View>
+    )
+  }
+
+
+  return (
+                        <VirtualizedList
+                            data={productDetails}
+                            initialNumToRender={2}
+                            renderItem={({ item,index }) =>   
+                                <>
+                                    {/* <TouchableOpacity key={index} style={{backgroundColor:'yellow',padding:10}} onPress={()=>alert(item.h2Caption)}>
+                                        <Text  style={{width:'100%',height:540,padding:12,backgroundColor:'red', marginBottom:10}}>{"productId"} -- {index} {item.projectID} -- {item.imageDetail!=undefined? item.imageDetail[0].imgName :"undefined"}</Text>
+                                    </TouchableOpacity>  */}
+                                    <View key={index} style={{backgroundColor:'yellow',padding:10,height:540,borderColor:'#fff',borderBottomWidth:6}} >
+                                       
+                                            <ImageContainer data={item.imageDetail}/>
+                                        
+                                    </View>
+                                </>
+                            }
+                            keyExtractor={(item,index) => index}
+                            getItemCount={getItemCount}
+                            getItem={getItem}
+                            // onEndReached={infiniteScrolling}
+                            // onEndReachedThreshold={0.1}
+                            // ListFooterComponent={renderFooter}
+                        />
+  )
+}
+
